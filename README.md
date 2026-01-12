@@ -1,3 +1,5 @@
+[中文](./README_CN.md)
+
 # CherryStudio Prompt Compiler
 
 > A Claude Code Skill for compiling local Markdown LLM prompts into CherryStudio-compatible Remote JSON format.

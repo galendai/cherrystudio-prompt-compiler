@@ -1,0 +1,13 @@
+# CherryStudio Prompt Compiler - Python Dependencies
+#
+# NO EXTERNAL DEPENDENCIES REQUIRED
+#
+# All scripts use only Python standard library:
+# - compile.py: argparse, json, pathlib, re, sys, typing
+# - validate.py: argparse, json, pathlib, re, sys, typing
+# - fix.py: argparse, json, pathlib, re, sys, typing
+#
+# Minimum Python version: 3.6+
+#
+# These scripts work out of the box with any standard Python installation
+# on Windows, macOS, and Linux.

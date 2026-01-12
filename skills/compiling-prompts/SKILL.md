@@ -33,93 +33,41 @@ User: Compile all prompts in ./prompts/ folder
 ```
 
 The skill will:
-1. Scan for all `.md` files in the specified directory
-2. Parse YAML frontmatter from each file
-3. Generate CherryStudio-compatible JSON with semantic emojis
-4. Output to `cherry-studio-prompts.json`
+1. Run `compile.py` to scan and compile prompts
+2. Run `validate.py` to verify the output
+3. Report the results
 
 ## Compilation Process
 
-### Step 1: Scan for Markdown Files
+### Step 1: Execute Compilation Script
 
-Use the `Glob` tool to find all `.md` files in the target directory:
+Use the `RunCommand` tool to execute the Python compilation script. This script handles file scanning, parsing, and JSON generation efficiently.
 
-```
-Glob pattern: **/*.md in the specified path
-```
-
-**Verification checklist:**
-- [ ] All Markdown files found in target directory
-- [ ] File paths are properly formatted (use forward slashes `/`)
-- [ ] Exclude any non-Markdown files
-
-### Step 2: Read and Parse Each File
-
-Use the `Read` tool to read each Markdown file. Extract:
-
-**1. YAML Frontmatter** (between `---` markers):
-   - `description`: Assistant description
-   - `category`: Group classification (default: `["General"]`)
-   - Other metadata (author, version, tags, etc.)
-
-**2. Full Content**: Include the complete Markdown content (frontmatter + body)
-
-**Verification checklist:**
-- [ ] YAML frontmatter properly extracted
-- [ ] Full content preserved (including YAML markers)
-- [ ] Description field retrieved (or marked as missing)
-- [ ] Category field retrieved (or set to default)
-
-### Step 3: Field Mapping
-
-Map extracted data to CherryStudio JSON format:
-
-| CherryStudio Field | Source | Notes |
-|-------------------|--------|-------|
-| `id` | Auto-generated | Sequential numbers: "1", "2", "3"... |
-| `name` | Filename | Without `.md` extension |
-| `description` | YAML `description` | Fallback to empty string if missing |
-| `emoji` | **AI-generated** | Use semantic understanding of description to pick relevant emoji |
-| `group` | YAML `category` | Convert to array if string; default to `["General"]` |
-| `prompt` | Full content | Include YAML frontmatter + Markdown body |
-
-**Verification checklist:**
-- [ ] All required fields mapped
-- [ ] ID is sequential starting from "1"
-- [ ] Name derived from filename (no extension)
-- [ ] Group is always an array
-
-### Step 4: Generate JSON Array
-
-Output a JSON array with all compiled prompts:
-
-```json
-[
-  {
-    "id": "1",
-    "name": "example-prompt",
-    "description": "A helpful AI assistant",
-    "emoji": "🤖",
-    "group": ["Template"],
-    "prompt": "---\nauthor: ...\n---\n\n# Content here"
-  }
-]
+```bash
+python skills/compiling-prompts/scripts/compile.py <input_dir> [output_file]
 ```
 
-**Verification checklist:**
-- [ ] Valid JSON array format
-- [ ] All prompts have required fields
-- [ ] Prompt content preserves original formatting
-- [ ] Emoji is a single character
+Default output file is `cherry-studio-prompts.json`.
 
-### Step 5: Write Output File
+### Step 2: Validate Output
 
-Use the `Write` tool to save the result as `cherry-studio-prompts.json`.
+Run the validation script to ensure the generated JSON meets CherryStudio requirements.
 
-**Verification checklist:**
-- [ ] File successfully written
-- [ ] JSON is valid and properly formatted
-- [ ] File is in expected location
+```bash
+python skills/compiling-prompts/scripts/validate.py <output_file>
+```
+
+### Step 3: Auto-Fix (If needed)
+
+If validation fails, use the fix script to resolve common issues automatically.
+
+```bash
+python skills/compiling-prompts/scripts/fix.py <output_file>
+```
+
+### Step 4: Final Report
+
+Report the location of the compiled file and the number of prompts compiled.
 
 ## Emoji Generation Guidelines
 
@@ -222,6 +170,95 @@ User: /compile-prompts ./my-prompts/
    ]
 
 6. Report: "Compiled 3 prompts successfully to cherry-studio-prompts.json"
+```
+
+## Scripts Reference
+
+The `scripts/` directory within this skill provides Python utilities for automated workflows:
+
+### compile.py
+
+Batch compile Markdown prompts to CherryStudio JSON format.
+
+```bash
+python scripts/compile.py <input_dir> [output_file]
+```
+
+**Features:**
+- Recursive directory scanning
+- Intelligent emoji generation based on semantic analysis
+- YAML frontmatter parsing with error handling
+- Rich terminal output with progress bars
+
+**Example:**
+```bash
+python scripts/compile.py ./prompts/ cherry-studio-prompts.json
+```
+
+### validate.py
+
+Validate JSON files against CherryStudio schema.
+
+```bash
+python scripts/validate.py <json_file> [--verbose]
+```
+
+**Features:**
+- JSON schema validation
+- Sequential ID verification
+- Emoji validity checking
+- Group format validation
+- Prompt content verification
+- Detailed error reporting with suggestions
+
+**Example:**
+```bash
+python scripts/validate.py cherry-studio-prompts.json --verbose
+```
+
+### fix.py
+
+Automatically fix common issues in JSON files.
+
+```bash
+python scripts/fix.py <json_file> [output_file] [--dry-run] [--validate-after]
+```
+
+**Features:**
+- Fix sequential IDs
+- Generate missing emojis based on description
+- Convert string groups to arrays
+- Add missing YAML frontmatter
+- Fix missing required fields
+- Self-healing with validation loop
+
+**Examples:**
+```bash
+# Fix in place
+python scripts/fix.py cherry-studio-prompts.json
+
+# Dry run to see what would be fixed
+python scripts/fix.py broken.json --dry-run
+
+# Fix and validate after
+python scripts/fix.py broken.json fixed.json --validate-after
+```
+
+### Auto-Fix Workflow
+
+For a complete automated workflow with self-healing:
+
+```bash
+# 1. Compile
+python scripts/compile.py ./prompts/ output.json
+
+# 2. Fix and validate (repeat until validation passes)
+python scripts/fix.py output.json --validate-after
+
+# 3. If validation still fails, iterate
+while ! python scripts/validate.py output.json; do
+    python scripts/fix.py output.json
+done
 ```
 
 ## Reference Documentation
